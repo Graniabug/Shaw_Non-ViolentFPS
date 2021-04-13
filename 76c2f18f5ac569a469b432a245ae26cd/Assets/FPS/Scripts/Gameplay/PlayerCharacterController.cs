@@ -133,7 +133,8 @@ namespace Unity.FPS.Gameplay
         float m_TargetCharacterHeight;
 
         bool onIce = false;
-        Vector3 preIceVelocity;
+        //Vector3 preIceVelocity;
+        float friction = 1.0f;
 
         const float k_JumpGroundingPreventionTime = 0.2f;
         const float k_GroundCheckDistanceInAir = 0.07f;
@@ -316,11 +317,18 @@ namespace Unity.FPS.Gameplay
                         }
                         targetVelocity = GetDirectionReorientedOnSlope(targetVelocity.normalized, m_GroundNormal) * targetVelocity.magnitude;
 
-                        // smoothly interpolate between our current velocity and the target velocity based on acceleration speed
+                    // smoothly interpolate between our current velocity and the target velocity based on acceleration speed
+                    if (onIce)
+                    {
+                        CharacterVelocity = Vector3.Lerp(CharacterVelocity, targetVelocity, friction * Time.deltaTime);
+                    }
+                    else
+                    {
                         CharacterVelocity = Vector3.Lerp(CharacterVelocity, targetVelocity, MovementSharpnessOnGround * Time.deltaTime);
+                    }
 
-                        // jumping
-                        if (IsGrounded && m_InputHandler.GetJumpInputDown())
+                    // jumping
+                    if (IsGrounded && m_InputHandler.GetJumpInputDown())
                         {
                             // force the crouch state to false
                             if (SetCrouchingState(false, false))
@@ -355,8 +363,6 @@ namespace Unity.FPS.Gameplay
 
                         // keep track of distance traveled for footsteps sound
                         m_FootstepDistanceCounter += CharacterVelocity.magnitude * Time.deltaTime;
-
-                    preIceVelocity = CharacterVelocity;
                 }
                 // handle air movement
                 else
@@ -500,6 +506,14 @@ namespace Unity.FPS.Gameplay
             if (other.gameObject.tag == "Ice")
             {
                 onIce = true;
+                //MovementSharpnessOnGround = -200;
+                friction = 0.00001f;
+            }
+
+            if (other.gameObject.tag == "SolidGround" || other.gameObject.tag == "Water")
+            {
+                onIce = false;
+                friction = 1.0f;
             }
         }
 
@@ -507,7 +521,9 @@ namespace Unity.FPS.Gameplay
         {
             if (other.gameObject.tag == "Ice")
             {
-                onIce = false;
+                //onIce = false;
+                //MovementSharpnessOnGround = 15;
+                //friction = 1.0f;
             }
         }
     }
